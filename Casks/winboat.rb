@@ -51,6 +51,8 @@ cask "winboat" do
       Winboat requires the following dependencies to be installed:
         - Docker (for running Windows containers)
         - FreeRDP (for remote desktop protocol support)
+      You can install FreeRDP from flatpak:
+        flatpak install com.freerdp.FreeRDP
     EOS
   end
 
