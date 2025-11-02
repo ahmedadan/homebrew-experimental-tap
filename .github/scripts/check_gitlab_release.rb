@@ -37,7 +37,7 @@ class GitLabReleaseChecker
       warn "Error fetching GitLab release: #{response.code} #{response.message}"
       nil
     end
-  rescue StandardError => e
+  rescue => e
     warn "Error fetching GitLab release: #{e.message}"
     nil
   end
@@ -51,7 +51,7 @@ class GitLabReleaseChecker
 
     unless File.exist?(formula_path)
       warn "Formula not found: #{formula_path}"
-      return nil
+      return
     end
 
     content = File.read(formula_path, encoding: "utf-8")
@@ -59,7 +59,7 @@ class GitLabReleaseChecker
     patterns = [
       /tag:\s+"v?([^"]+)"/,
       %r{url.*/archive/v?([^/]+)/asusctl-},
-      /version\s+"([^"]+)"/
+      /version\s+"([^"]+)"/,
     ]
 
     patterns.each do |pattern|
@@ -74,19 +74,20 @@ class GitLabReleaseChecker
     needs_update = gitlab_version != formula_version
 
     {
-      needs_update: needs_update,
-      latest_version: gitlab_version,
+      needs_update:    needs_update,
+      latest_version:  gitlab_version,
       current_version: formula_version,
-      new_version: needs_update ? gitlab_version : ""
+      new_version:     needs_update ? gitlab_version : "",
     }
   end
 
-  def set_github_output(data)
+  def update_github_output(data)
     return unless ENV["GITHUB_OUTPUT"]
 
-    File.open(ENV["GITHUB_OUTPUT"], "a") do |file|
+    File.open(ENV.fetch("GITHUB_OUTPUT", nil), "a") do |file|
       data.each do |key, value|
-        value = value.to_s.downcase if [true, false].include?(value)
+        booleans = [true, false]
+        value = value.to_s.downcase if booleans.include?(value)
         file.puts "#{key}=#{value}"
         file.puts "#{@formula_name}_#{key}=#{value}"
       end
@@ -116,7 +117,7 @@ class GitLabReleaseChecker
       - **Checked at**: GitLab API latest release endpoint
     MARKDOWN
 
-    File.open(ENV["GITHUB_STEP_SUMMARY"], "a") do |file|
+    File.open(ENV.fetch("GITHUB_STEP_SUMMARY", nil), "a") do |file|
       file.write(summary)
     end
   end
@@ -148,7 +149,7 @@ class GitLabReleaseChecker
     end
 
     result = compare_versions(gitlab_version, formula_version)
-    set_github_output(result)
+    update_github_output(result)
     write_github_summary(result)
 
     if result[:needs_update]
@@ -160,43 +161,48 @@ class GitLabReleaseChecker
 
     0
   end
+
+  def self.parse_options
+    options = {
+      formula: "asusctl",
+      project: "asus-linux/asusctl",
+      version: nil,
+    }
+
+    OptionParser.new do |opts|
+      opts.banner = "Usage: check_gitlab_release.rb [options]"
+
+      opts.on("--formula FORMULA", "Formula name (default: asusctl)") do |v|
+        options[:formula] = v
+      end
+
+      opts.on("--project PROJECT", "GitLab project path (default: asus-linux/asusctl)") do |v|
+        options[:project] = v
+      end
+
+      opts.on("--version VERSION", "Manually specify version to check against (skips GitLab API call)") do |v|
+        options[:version] = v
+      end
+
+      opts.on("-h", "--help", "Prints this help") do
+        puts opts
+        exit
+      end
+    end.parse!
+
+    options
+  end
 end
 
-def main
-  options = {
-    formula: "asusctl",
-    project: "asus-linux/asusctl",
-    version: nil
-  }
-
-  OptionParser.new do |opts|
-    opts.banner = "Usage: check_gitlab_release.rb [options]"
-
-    opts.on("--formula FORMULA", "Formula name (default: asusctl)") do |v|
-      options[:formula] = v
-    end
-
-    opts.on("--project PROJECT", "GitLab project path (default: asus-linux/asusctl)") do |v|
-      options[:project] = v
-    end
-
-    opts.on("--version VERSION", "Manually specify version to check against (skips GitLab API call)") do |v|
-      options[:version] = v
-    end
-
-    opts.on("-h", "--help", "Prints this help") do
-      puts opts
-      exit
-    end
-  end.parse!
+# Script execution
+if __FILE__ == $PROGRAM_NAME
+  options = GitLabReleaseChecker.parse_options
 
   checker = GitLabReleaseChecker.new(
-    project_path: options[:project],
-    formula_name: options[:formula],
-    manual_version: options[:version]
+    project_path:   options[:project],
+    formula_name:   options[:formula],
+    manual_version: options[:version],
   )
 
   exit(checker.run)
 end
-
-main if __FILE__ == $PROGRAM_NAME

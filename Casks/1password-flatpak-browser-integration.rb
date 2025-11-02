@@ -61,7 +61,7 @@ module Utils
     File.write(file_path, new_content)
   end
 
-  def self.get_native_messaging_hosts_json(wrapper_path, allowed_extensions)
+  def self.native_messaging_hosts_json(wrapper_path, allowed_extensions)
     <<~JSON
       {
         "name": "com.1password.1password",
@@ -84,7 +84,8 @@ module Utils
     config = JSON.parse(File.read(CONFIG_PATH))
 
     unless flatpak_package_list.include?(config["flatpak_browser_id"])
-      puts "#{WARN}Browser ID #{config["flatpak_browser_id"]} from config not found in installed Flatpak applications, please re-run the installation to select a valid browser.#{NC}"
+      puts "#{WARN}Browser ID #{config["flatpak_browser_id"]} from config not found in installed Flatpak " \
+           "applications, please re-run the installation to select a valid browser.#{NC}"
       exit 1
     end
 
@@ -95,7 +96,7 @@ module Utils
     config
   end
 
-  def self.get_browser_lists
+  def self.browser_lists
     {
       chromium: list_flatpak_browsers(CHROMIUM_BROWSERS),
       firefox:  list_flatpak_browsers(FIREFOX_BROWSERS),
@@ -110,7 +111,7 @@ module Utils
     puts browser_lists[:firefox].empty? ? "None" : browser_lists[:firefox].join("\n")
   end
 
-  def self.get_user_browser_id
+  def self.user_browser_id
     puts "#{INFO}Enter the name of your browser's Flatpak application ID (e.g. com.google.Chrome): #{NC}"
     browser_id = `read -r flatpak_browser_id && echo $flatpak_browser_id`.chomp
 
@@ -134,7 +135,8 @@ module Utils
     elsif browser_lists[:firefox].include?(browser_id)
       "firefox"
     else
-      puts "#{WARN}Browser ID #{browser_id} not recognized as Chromium-based or Firefox-based, please enter manually: chromium or firefox#{NC}"
+      puts "#{WARN}Browser ID #{browser_id} not recognized as Chromium-based or Firefox-based, please enter " \
+           "manually: chromium or firefox#{NC}"
       manual_type = `read -r manual_type && echo $manual_type`.chomp
 
       unless %w[chromium firefox].include?(manual_type)
@@ -146,7 +148,7 @@ module Utils
     end
   end
 
-  def self.get_wrapper_script_content
+  def self.wrapper_script_content
     <<~BASH
       #!/bin/bash
       if [ "${container-}" = flatpak ]; then
@@ -161,13 +163,13 @@ module Utils
     wrapper_path = "#{Dir.home}/.var/app/#{browser_id}/data/bin/1password-wrapper.sh"
     puts "#{INFO}Creating wrapper script for 1Password...#{NC}"
 
-    File.write(wrapper_path, get_wrapper_script_content)
+    File.write(wrapper_path, wrapper_script_content)
     system "chmod", "+x", wrapper_path
 
     wrapper_path
   end
 
-  def self.get_native_messaging_dir(browser_type, browser_id)
+  def self.native_messaging_dir(browser_type, browser_id)
     if browser_type == "chromium"
       # Find Chromium native messaging directory
       chromium_dir = Dir.glob("#{Dir.home}/.var/app/#{browser_id}/config/**/NativeMessagingHosts").first
@@ -178,8 +180,9 @@ module Utils
   end
 
   def self.create_manifest_path(browser_type, browser_id)
-    puts "#{INFO}Creating a Native Messaging Hosts file for the 1Password extension to tell the browser to use the wrapper script...#{NC}"
-    native_messaging_dir = get_native_messaging_dir(browser_type, browser_id)
+    puts "#{INFO}Creating a Native Messaging Hosts file for the 1Password extension to tell the browser to use " \
+         "the wrapper script...#{NC}"
+    native_messaging_dir = native_messaging_dir(browser_type, browser_id)
 
     puts "#{INFO}Creating native messaging host manifest...#{NC}"
     FileUtils.mkdir_p(native_messaging_dir)
@@ -187,7 +190,7 @@ module Utils
     "#{native_messaging_dir}/com.1password.1password.json"
   end
 
-  def self.get_allowed_extensions(browser_id, browser_lists)
+  def self.allowed_extensions(browser_id, browser_lists)
     if browser_lists[:chromium].include?(browser_id)
       ALLOWED_EXTENSIONS_CHROMIUM
     elsif browser_lists[:firefox].include?(browser_id)
@@ -204,8 +207,8 @@ module Utils
     global_manifest_path = "#{GLOBAL_NATIVE_MESSAGING_PATH}/com.1password.1password.json"
 
     # Check if the global manifest is already correctly set up
-    if is_native_messaging_host_correct(GLOBAL_WRAPPER_PATH, ALLOWED_EXTENSIONS_FIREFOX,
-                                        GLOBAL_NATIVE_MESSAGING_PATH, true)
+    if native_messaging_host_correct?(GLOBAL_WRAPPER_PATH, ALLOWED_EXTENSIONS_FIREFOX,
+                                      GLOBAL_NATIVE_MESSAGING_PATH, true)
       puts "#{INFO}Already added to #{global_manifest_path}#{NC}"
       return
     end
@@ -223,7 +226,7 @@ module Utils
     FileUtils.mkdir_p(GLOBAL_NATIVE_MESSAGING_PATH)
     system "sudo", "chattr", "-i", global_manifest_path, "2>/dev/null"
 
-    global_manifest_content = get_native_messaging_hosts_json(GLOBAL_WRAPPER_PATH, ALLOWED_EXTENSIONS_FIREFOX)
+    global_manifest_content = native_messaging_hosts_json(GLOBAL_WRAPPER_PATH, ALLOWED_EXTENSIONS_FIREFOX)
     File.write(global_manifest_path, global_manifest_content)
 
     puts "#{INFO}Marking #{global_manifest_path} as read-only using chattr +i. To undo, run this command:#{NC}"
@@ -235,7 +238,8 @@ module Utils
 
   def self.setup_1password_allowed_browsers
     puts "#{INFO}Adding Flatpaks to the list of supported browsers in 1Password#{NC}"
-    puts "Note: This requires sudo permissions. If this doesn't work, append flatpak-session-helper to the file /etc/1password/custom_allowed_browsers"
+    puts "Note: This requires sudo permissions. If this doesn't work, append flatpak-session-helper to the file " \
+         "/etc/1password/custom_allowed_browsers"
 
     unless File.exist?("/etc/1password")
       puts "#{INFO}Creating directory /etc/1password...#{NC}"
@@ -251,7 +255,8 @@ module Utils
       success = system "echo 'flatpak-session-helper' | sudo tee -a '#{allowed_browsers_file}' >/dev/null"
 
       unless success
-        puts "#{ERROR}Failed to add to allowed browsers. You may need to manually add 'flatpak-session-helper' to #{allowed_browsers_file}#{NC}"
+        puts "#{ERROR}Failed to add to allowed browsers. You may need to manually add 'flatpak-session-helper' to " \
+             "#{allowed_browsers_file}#{NC}"
       end
     end
   end
@@ -260,7 +265,7 @@ module Utils
     File.write(CONFIG_PATH, JSON.pretty_generate(config_data))
   end
 
-  def self.is_firefox_dir(dir)
+  def self.firefox_dir?(dir)
     return false unless Dir.exist?(dir)
     return false if %w[.. cache .cache].include?(File.basename(dir))
 
@@ -274,13 +279,13 @@ module Utils
     Dir.glob("#{app_dir}/*").each do |dir|
       next unless Dir.exist?(dir)
 
-      return "#{dir}/native-messaging-hosts" if is_firefox_dir(dir)
+      return "#{dir}/native-messaging-hosts" if firefox_dir?(dir)
 
       # Check subdirectories (like .mozilla/firefox)
       Dir.glob("#{dir}/*").each do |subdir|
         next unless Dir.exist?(subdir)
 
-        if is_firefox_dir(subdir)
+        if firefox_dir?(subdir)
           # Firefox puts native-messaging-hosts in .mozilla, not .mozilla/firefox
           return "#{dir}/native-messaging-hosts"
         end
@@ -291,12 +296,12 @@ module Utils
     "#{app_dir}/.mozilla/native-messaging-hosts"
   end
 
-  def self.is_native_messaging_host_correct(wrapper_path, allowed_extensions, native_messaging_dir,
-                                            should_be_immutable = false)
+  def self.native_messaging_host_correct?(wrapper_path, allowed_extensions, native_messaging_dir,
+                                          should_be_immutable: false)
     manifest_file = "#{native_messaging_dir}/com.1password.1password.json"
 
     # Check if files exist
-    return false unless File.exist?(manifest_file) && File.exist?(wrapper_path)
+    return false if !File.exist?(manifest_file) && !File.exist?(wrapper_path)
 
     # Check if file should be immutable
     if should_be_immutable
@@ -306,18 +311,19 @@ module Utils
 
     # Check contents
     current_content = File.read(manifest_file)
-    expected_content = get_native_messaging_hosts_json(wrapper_path, allowed_extensions)
+    expected_content = native_messaging_hosts_json(wrapper_path, allowed_extensions)
 
     current_content == expected_content
   end
 
   def self.display_security_warning
     puts "This script will help you set up 1Password in a Flatpak browser."
-    puts "#{WARN}Note: It will make it possible for any Flatpak application to integrate, not just some. Consider if you find this worth the risk.#{NC}"
+    puts "#{WARN}Note: It will make it possible for any Flatpak application to integrate, not just some. Consider " \
+         "if you find this worth the risk.#{NC}"
     puts
   end
 
-  def self.verify_final_setup
+  def self.verify_final_setup?
     allowed_browsers_file = "/etc/1password/custom_allowed_browsers"
 
     if File.exist?(allowed_browsers_file) && File.read(allowed_browsers_file).include?("flatpak-session-helper")
@@ -352,7 +358,7 @@ cask "1password-flatpak-browser-integration" do
 
     # Load existing config or gather user input
     config = Utils.load_config
-    browser_lists = Utils.get_browser_lists
+    browser_lists = Utils.browser_lists
 
     if config
       flatpak_browser_id = config["flatpak_browser_id"]
@@ -361,7 +367,7 @@ cask "1password-flatpak-browser-integration" do
       manifest_path = config["manifest_path"]
     else
       Utils.display_browsers(browser_lists)
-      flatpak_browser_id = Utils.get_user_browser_id
+      flatpak_browser_id = Utils.user_browser_id
       browser_type = Utils.determine_browser_type(flatpak_browser_id, browser_lists)
     end
 
@@ -386,8 +392,8 @@ cask "1password-flatpak-browser-integration" do
     end
 
     # Create and write manifest content
-    allowed_extensions = Utils.get_allowed_extensions(flatpak_browser_id, browser_lists)
-    manifest_content = Utils.get_native_messaging_hosts_json(wrapper_path, allowed_extensions)
+    allowed_extensions = Utils.allowed_extensions(flatpak_browser_id, browser_lists)
+    manifest_content = Utils.native_messaging_hosts_json(wrapper_path, allowed_extensions)
     File.write(manifest_path, manifest_content)
 
     # Handle Firefox-specific global manifest requirements
@@ -403,7 +409,7 @@ cask "1password-flatpak-browser-integration" do
     puts
 
     # Verify final setup and display results
-    if Utils.verify_final_setup
+    if Utils.verify_final_setup?
       # Save configuration for future use (only if it doesn't exist)
       unless config
         Utils.save_config({
