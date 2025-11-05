@@ -312,11 +312,13 @@ cask "bluefin-cli" do
         case "$shell" in
           bash)
           config="$HOME/.bashrc"
-          source_line=". $BLING_SH"
+          # Source bling in bash shell context to avoid zsh compatibility issues
+          source_line="if [ -n \"\${BASH_VERSION:-}\" ]; then . $BLING_SH; fi"
           ;;
           zsh)
           config="$HOME/.zshrc"
-          source_line=". $BLING_SH"
+          # Use emulate to run bash code in zsh, protecting against shopt and other bash-isms
+          source_line="if [ -n \"\${ZSH_VERSION:-}\" ]; then emulate bash -c '. $BLING_SH'; fi"
           ;;
           fish)
           config="$HOME/.config/fish/config.fish"
