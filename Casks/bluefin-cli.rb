@@ -5,10 +5,10 @@ cask "bluefin-cli" do
 
   on_linux do
     on_intel do
-      sha256 "42f4d7a8c55bea619a4cb8558af66fa6dcd798e510505f7d48bfafaef4a6ab4c"
+      sha256 "edd352b9de6bd05d5248b63daecb6d0bc6252eb0ad500fdb3d7d790083a429d5"
     end
     on_arm do
-      sha256 "bbc4a2ac38c664849449149fb076d3dc3605898eab6db8dcf565986b25ac781a"
+      sha256 "8ba6aa87ef00a3f0d05051d143e625227cbb7dec720804364e8cc8f5402a3449"
     end
   end
 
