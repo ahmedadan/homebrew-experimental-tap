@@ -4,6 +4,7 @@ class BluefinCli < Formula
   url "https://github.com/hanthor/bluefin-cli/archive/refs/tags/v0.0.3.tar.gz"
   sha256 "df61ae6dd59220720d63e9624b5f4c7a59c64fb727008cef5e961423cbe3b082"
   license "Apache-2.0"
+  head "https://github.com/hanthor/bluefin-cli.git"
 
   depends_on "go" => :build
 
