@@ -10,6 +10,7 @@ class LinuxMcpServer < Formula
   depends_on "rust" => :build
   depends_on "gemini-cli"
   depends_on "libyaml"
+  depends_on "openssl@3"
   depends_on "python@3.12"
 
   on_macos do
@@ -503,16 +504,29 @@ class LinuxMcpServer < Formula
 
   def caveats
     <<~EOS
-      To configure goose to use linux-mcp-server, first run:
-        goose-mcp-setup
+      Linux:
+        To configure goose to use linux-mcp-server locally, run:
+          goose-mcp-setup
 
-      This will create ~/.config/goose/config.yaml with the linux-mcp-server
-      extension configured.
+        This will create ~/.config/goose/config.yaml with the linux-mcp-server
+        extension configured.
 
-      Set these in your shell environment or via goose's configuration.
+      macOS (Remote SSH to Linux):
+        On macOS, linux-mcp-server connects to a remote Linux host via SSH.
+        Set these environment variables:
+
+          export LINUX_MCP_USER="your-username"
+          export LINUX_MCP_SSH_KEY_PATH="~/.ssh/id_ed25519"
+
+        Optional settings:
+          LINUX_MCP_KEY_PASSPHRASE     - Passphrase for encrypted SSH key
+          LINUX_MCP_SEARCH_FOR_SSH_KEY - Set to "yes" to auto-discover keys
+          LINUX_MCP_COMMAND_TIMEOUT    - SSH command timeout in seconds (default: 30)
+          LINUX_MCP_VERIFY_HOST_KEYS   - Set to "true" for host key verification
+          LINUX_MCP_KNOWN_HOSTS_PATH   - Custom path to known_hosts file
 
       For more configuration options, see:
-        https://rhel-lightspeed.github.io/linux-mcp-server/
+        https://rhel-lightspeed.github.io/linux-mcp-server/clients/
     EOS
   end
 
