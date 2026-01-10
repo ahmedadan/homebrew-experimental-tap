@@ -73,11 +73,17 @@ jobs:
             fi
           done
 
+      - name: List bottle files
+        run: |
+          echo "Looking for bottle files..."
+          ls -la *.bottle.* || echo "No bottle files found in current directory"
+
       - name: Upload bottle artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
            name: bottle-linux-${{ matrix.arch }}
            path: '*.bottle.*'
+           if-no-files-found: error
 
   upload-bottles:
     needs: [get-version, build-linux-bottle]
@@ -92,7 +98,7 @@ jobs:
         with:
           pattern: bottle-*
           merge-multiple: true
-          path: bottles
+          path: /tmp/bottles
 
       - name: Check if release exists
         id: check-release
@@ -112,7 +118,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ needs.get-version.outputs.version }}"
-          gh release create "block-goose-cli-linux-$VERSION" bottles/*.bottle.* \
+          gh release create "block-goose-cli-linux-$VERSION" /tmp/bottles/*.bottle.* \
             --title "block-goose-cli-linux $VERSION bottles" \
             --notes "Bottles for block-goose-cli-linux $VERSION" \
             --repo "$GITHUB_REPOSITORY"
@@ -123,7 +129,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ needs.get-version.outputs.version }}"
-          gh release upload "block-goose-cli-linux-$VERSION" bottles/*.bottle.* \
+          gh release upload "block-goose-cli-linux-$VERSION" /tmp/bottles/*.bottle.* \
             --clobber \
             --repo "$GITHUB_REPOSITORY"
 
@@ -134,14 +140,16 @@ jobs:
 
       - name: Update formula with bottle SHAs
         run: |
-          cd bottles
-          if ls ./*.bottle.json 1> /dev/null 2>&1; then
+          if [ -d /tmp/bottles ] && ls /tmp/bottles/*.bottle.json 1> /dev/null 2>&1; then
+            cd /tmp/bottles
             mkdir -p "$(brew --repository)/Library/Taps/ublue-os"
             cp -r "${{ github.workspace }}" "$(brew --repository)/Library/Taps/ublue-os/homebrew-experimental"
 
             brew bottle --merge --write --no-commit ./*.bottle.json
 
             cp "$(brew --repository)/Library/Taps/ublue-os/homebrew-experimental/Formula/block-goose-cli-linux.rb" "${{ github.workspace }}/Formula/"
+          else
+            echo "No bottle files found, skipping merge"
           fi
 
       - name: Commit bottle updates
