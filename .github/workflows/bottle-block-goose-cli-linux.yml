@@ -76,7 +76,7 @@ jobs:
       - name: List bottle files
         run: |
           echo "Looking for bottle files..."
-          ls -la *.bottle.* || echo "No bottle files found in current directory"
+          ls -la ./*.bottle.* || echo "No bottle files found in current directory"
 
       - name: Upload bottle artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

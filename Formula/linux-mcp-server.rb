@@ -8,9 +8,9 @@ class LinuxMcpServer < Formula
   license "GPL-3.0-only"
 
   depends_on "rust" => :build
+  depends_on "gemini-cli"
   depends_on "libyaml"
   depends_on "python@3.12"
-  depends_on "gemini-cli"
 
   on_macos do
     depends_on "block-goose-cli"
