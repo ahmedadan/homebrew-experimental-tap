@@ -130,7 +130,7 @@ jobs:
         with:
           pattern: bottle-*
           merge-multiple: true
-          path: bottles
+          path: /tmp/bottles
 
       - name: Check if release exists
         id: check-release
@@ -150,7 +150,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ needs.get-version.outputs.version }}"
-          gh release create "linux-mcp-server-$VERSION" bottles/*.bottle.* \
+          gh release create "linux-mcp-server-$VERSION" /tmp/bottles/*.bottle.* \
             --title "linux-mcp-server $VERSION bottles" \
             --notes "Bottles for linux-mcp-server $VERSION" \
             --repo "$GITHUB_REPOSITORY"
@@ -161,7 +161,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ needs.get-version.outputs.version }}"
-          gh release upload "linux-mcp-server-$VERSION" bottles/*.bottle.* \
+          gh release upload "linux-mcp-server-$VERSION" /tmp/bottles/*.bottle.* \
             --clobber \
             --repo "$GITHUB_REPOSITORY"
 
@@ -172,14 +172,16 @@ jobs:
 
       - name: Update formula with bottle SHAs
         run: |
-          cd bottles
-          if ls ./*.bottle.json 1> /dev/null 2>&1; then
+          if [ -d /tmp/bottles ] && ls /tmp/bottles/*.bottle.json 1> /dev/null 2>&1; then
+            cd /tmp/bottles
             mkdir -p "$(brew --repository)/Library/Taps/ublue-os"
             cp -r "${{ github.workspace }}" "$(brew --repository)/Library/Taps/ublue-os/homebrew-experimental"
 
             brew bottle --merge --write --no-commit ./*.bottle.json
 
             cp "$(brew --repository)/Library/Taps/ublue-os/homebrew-experimental/Formula/linux-mcp-server.rb" "${{ github.workspace }}/Formula/"
+          else
+            echo "No bottle files found, skipping merge"
           fi
 
       - name: Commit bottle updates
