@@ -45,6 +45,8 @@ jobs:
               mkdir -p /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/ublue-os
               cp -r /tmp/homebrew-tap /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/ublue-os/homebrew-experimental
 
+              # Build dependencies from source if bottles not available
+              brew install --build-from-source 'ublue-os/experimental/block-goose-cli-linux' || true
               brew install --build-bottle 'ublue-os/experimental/linux-mcp-server'
 
               cd /tmp
@@ -76,7 +78,7 @@ jobs:
     needs: get-version
     strategy:
       matrix:
-        os: [macos-14, macos-13]
+        os: [macos-15, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
