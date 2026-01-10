@@ -442,6 +442,11 @@ class LinuxMcpServer < Formula
   end
 
   def install
+    # Set environment for cryptography build to find openssl
+    ENV["OPENSSL_DIR"] = Formula["openssl@3"].opt_prefix
+    ENV["OPENSSL_LIB_DIR"] = Formula["openssl@3"].opt_lib
+    ENV["OPENSSL_INCLUDE_DIR"] = Formula["openssl@3"].opt_include
+
     virtualenv_install_with_resources
 
     # Install the goose configuration setup script
