@@ -7,13 +7,6 @@ class LinuxMcpServer < Formula
   sha256 "466554d4c365160ef7518c4feb4bb05f4dc53908288a4c9eceabafafbccccaf5"
   license "GPL-3.0-only"
 
-  bottle do
-    root_url "https://github.com/ublue-os/homebrew-experimental-tap/releases/download/linux-mcp-server-1.0.1"
-    sha256 cellar: :any,                 arm64_sequoia: "de137f5bbe6fcf0def62fb05b1982bd5ef2c1475e1e37a2f1d00c092c3bfb3c1"
-    sha256 cellar: :any,                 arm64_sonoma:  "37330f646f02b6d4edc7991e2b9337d65aab669e2d741b930e649172f31e7c25"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:  "1a413797b228f282219341b612bc7e207e69c6250740b13145f32594e3aae815"
-  end
-
   depends_on "rust" => :build
   depends_on "gemini-cli"
   depends_on "libyaml"
