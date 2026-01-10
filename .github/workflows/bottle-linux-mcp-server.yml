@@ -173,7 +173,9 @@ jobs:
 
             brew bottle --merge --write --no-commit ./*.bottle.json
 
-            cp "$(brew --repository)/Library/Taps/ublue-os/homebrew-experimental-tap/Formula/linux-mcp-server.rb" "${{ github.workspace }}/Formula/"
+            # Copy via temp file to handle symlink (setup-homebrew links tap to workspace)
+            cp "$(brew --repository)/Library/Taps/ublue-os/homebrew-experimental-tap/Formula/linux-mcp-server.rb" /tmp/linux-mcp-server.rb
+            cp /tmp/linux-mcp-server.rb "${{ github.workspace }}/Formula/"
           else
             echo "No bottle files found, skipping merge"
           fi
