@@ -1,11 +1,11 @@
 cask "emacs-app-linux" do
   arch arm: "arm64", intel: "amd64"
 
-  version "30.2-17"
-  sha256 arm64_linux:  "315a949a66d396003bb3ac4780d68aebaf5603ed9ade35711924a576ef4ae4b3",
-         x86_64_linux: "144f0e541cc2ebf65027004a65f521b38cc6ee9e729183813536682dcbe16014"
+  version "30.2-18"
+  sha256 arm64_linux:  "d2471179e3a7691148a585c04c573a9dc95ee26b448624f4a8131d73c2234698",
+         x86_64_linux: "2d3d1c145fe8f0edf51f1275c5109eee116f98e2899498ca710ab96858fa0a70"
 
-  url "https://github.com/daegalus/linux-app-builds/releases/download/emacs-pgtk-#{version}/emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}.tar.gz",
+  url "https://github.com/daegalus/linux-app-builds/releases/download/emacs-pgtk-#{version}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}.tar.gz",
       verified: "github.com/daegalus/linux-app-builds/"
   name "Emacs PGTK"
   desc "Text editor with PGTK support (Native Wayland and X11)"
@@ -16,36 +16,92 @@ cask "emacs-app-linux" do
     regex(/^emacs-pgtk[._-]v?(\d+(?:\.\d+)+-\d+)$/i)
   end
 
+  depends_on formula: "libgccjit"
+  depends_on formula: "tree-sitter@0.25"
+
   # Binaries
-  binary "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/run-emacs.sh", target: "emacs"
-  binary "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/bin/emacs-#{version.major_minor}", target: "emacs-#{version.major_minor}"
-  binary "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/bin/emacsclient"
-  binary "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/bin/ctags"
-  binary "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/bin/ebrowse"
-  binary "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/bin/etags"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh", target: "emacs"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/emacs-#{version.split("-").first}", target: "emacs-#{version.split("-").first}"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/emacsclient"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/ctags"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/ebrowse"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/etags"
 
   # Libraries (needed for emacs to run)
-  artifact "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/lib",
+  artifact "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/lib",
            target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/lib"
 
   # Share directory (elisp, icons, schemas, man pages, etc.)
-  artifact "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/share",
+  artifact "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share",
            target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/share"
 
   # Libexec (helper binaries and compiled modules)
-  artifact "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/libexec",
+  artifact "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/libexec",
            target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/libexec"
 
   # Man pages
-  manpage "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/share/man/man1/ctags.1.gz"
-  manpage "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/share/man/man1/ebrowse.1.gz"
-  manpage "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/share/man/man1/emacs.1.gz"
-  manpage "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/share/man/man1/emacsclient.1.gz"
-  manpage "emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/share/man/man1/etags.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/ctags.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/ebrowse.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/emacs.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/emacsclient.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/etags.1.gz"
 
   preflight do
     # Make run-emacs.sh executable
-    FileUtils.chmod "+x", "#{staged_path}/emacs-pgtk-#{version.major_minor}-ubuntu-lts-#{arch}/run-emacs.sh"
+    FileUtils.chmod "+x", "#{staged_path}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh"
+
+    # Update the run-emacs.sh script to include all necessary Homebrew library paths
+    script_path = "#{staged_path}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh"
+    content = File.read(script_path)
+
+    # Add tree-sitter and libgccjit paths after the Homebrew lib path check
+    homebrew_paths = <<~'PATHS'
+      # Add Homebrew paths if they exist (for systems like immutable distros)
+      if [ -d "/home/linuxbrew/.linuxbrew/lib" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/lib:$LD_LIBRARY_PATH"
+      fi
+      # Add libgccjit (required for native compilation)
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/libgccjit/lib/gcc/current" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/opt/libgccjit/lib/gcc/current:$LD_LIBRARY_PATH"
+      fi
+      # Add tree-sitter@0.25 (keg-only)
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/tree-sitter@0.25/lib" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/opt/tree-sitter@0.25/lib:$LD_LIBRARY_PATH"
+      fi
+    PATHS
+
+    content.gsub!(
+      /# Add Homebrew paths.*?\n  export LD_LIBRARY_PATH="\/home\/linuxbrew\/\.linuxbrew\/lib:\$LD_LIBRARY_PATH"\nfi/m,
+      homebrew_paths.strip
+    )
+
+    # Add Emacs data directory environment variables after the GSETTINGS_SCHEMA_DIR line
+    emacs_version = version.split("-").first
+    # ARM64 uses aarch64-unknown-linux-gnu, x86_64 uses x86_64-pc-linux-gnu
+    target_triplet = Hardware::CPU.arm? ? "aarch64-unknown-linux-gnu" : "x86_64-pc-linux-gnu"
+    emacs_env_vars = <<~ENVVARS
+      export GSETTINGS_SCHEMA_DIR="$SCRIPT_DIR/share/glib-2.0/schemas"
+
+      # Set Emacs data directories (use Homebrew opt path when symlinked)
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}" ]; then
+        export EMACSDATA="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
+        export EMACSPATH="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/libexec/emacs/#{emacs_version}/#{target_triplet}"
+        export EMACSDOC="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
+        export EMACSLOADPATH="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/lisp"
+      else
+        export EMACSDATA="$SCRIPT_DIR/share/emacs/#{emacs_version}/etc"
+        export EMACSPATH="$SCRIPT_DIR/bin"
+        export EMACSDOC="$SCRIPT_DIR/share/emacs/#{emacs_version}/etc"
+        export EMACSLOADPATH="$SCRIPT_DIR/share/emacs/#{emacs_version}/lisp"
+      fi
+    ENVVARS
+
+    content.gsub!(
+      'export GSETTINGS_SCHEMA_DIR="$SCRIPT_DIR/share/glib-2.0/schemas"',
+      emacs_env_vars.strip
+    )
+
+    File.write(script_path, content)
   end
 
   postflight do
