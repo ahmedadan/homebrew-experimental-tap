@@ -19,18 +19,11 @@ class LinuxMcpServer < Formula
   end
 
   depends_on "rust" => :build
+  depends_on "block-goose-cli"
   depends_on "gemini-cli"
   depends_on "libyaml"
   depends_on "openssl@3"
   depends_on "python@3.12"
-
-  on_macos do
-    depends_on "block-goose-cli"
-  end
-
-  on_linux do
-    depends_on "block-goose-cli-linux"
-  end
 
   resource "annotated-types" do
     url "https://files.pythonhosted.org/packages/ee/67/531ea369ba64dcff5ec9c3402f9f51bf748cec26dde048a2f973a4eea7f5/annotated_types-0.7.0.tar.gz"
