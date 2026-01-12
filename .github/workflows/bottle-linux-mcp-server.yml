@@ -78,7 +78,6 @@ jobs:
               mkdir -p /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/ublue-os
               cp -r /tmp/homebrew-tap /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/ublue-os/homebrew-experimental-tap
 
-              brew install 'ublue-os/experimental-tap/block-goose-cli-linux'
               brew install --build-bottle 'ublue-os/experimental-tap/linux-mcp-server'
 
               cd /tmp
